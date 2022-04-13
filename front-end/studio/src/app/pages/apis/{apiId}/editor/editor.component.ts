@@ -52,6 +52,9 @@ import {
     ReferenceUtil,
     ValidationProblem
 } from "@apicurio/data-models";
+import { SpectralValidationExtension } from '@apicurio/data-models-spectral-extension';
+import { truthy } from "@stoplight/spectral-functions";
+import { DiagnosticSeverity } from '@stoplight/types';
 import {EditorMasterComponent} from "./_components/master.component";
 import {VersionedAck} from "../../../../models/ack.model";
 import {ApiEditorUser} from "../../../../models/editor-user.model";
@@ -147,6 +150,21 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
                 private featuresService: FeaturesService, private collaboratorService: CollaboratorService,
                 private catalog: ApiCatalogService) {
         super();
+
+        const spectral = new SpectralValidationExtension({ruleset: {
+            rules: {
+                'title-required': {
+                  given: '$.info',
+                  description: 'Info title is required',
+                  severity: DiagnosticSeverity.Hint,
+                  then: {
+                    function: truthy,
+                    field: 'title',
+                  },
+                },
+              }
+        }});
+        this.validationExtensions.push(spectral);
 
         Library.addReferenceResolver(this);
         console.debug("[ApiEditorComponent] Subscribing to API Catalog changes.");
