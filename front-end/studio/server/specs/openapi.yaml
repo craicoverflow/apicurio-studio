@@ -1,0 +1,268 @@
+openapi: 3.0.2
+info:
+  title: Spectral Studio Microservice
+  version: 0.1.0
+  description: A micro service for storing and validating Spectral rulesets from Apicurio Studio
+  contact:
+    name: Enda Phelan
+    email: ephelan@redhat.com
+  license:
+    name: Apache 2.0
+    url: "https://www.apache.org/licenses/LICENSE-2.0"
+paths:
+  /:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpectralRulesetList"
+          description: List of all rulesets
+      operationId: listRulesets
+      summary: Retrieve a list of all Spectral rulesets
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewSpectralRuleset"
+        required: true
+      responses:
+        "201":
+          description: Ruleset created successfully
+        "400":
+          description: Invalid request data
+      operationId: createSpectralRuleset
+      description: Create a new Spectral ruleset
+  "/{rulesetId}":
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpectralRuleset"
+          description: Successful
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Not Found
+      operationId: getRulesetById
+      description: Get a ruleset
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSpectralRuleset"
+        required: true
+      responses:
+        "200":
+          description: Update successful
+        "400":
+          description: Bad request
+      operationId: updateRuleset
+      description: Update ruleset
+    parameters:
+      - name: rulesetId
+        schema:
+          format: int64
+          type: integer
+        in: path
+        required: true
+  "/{rulesetId}/validate":
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Document"
+        required: true
+      parameters:
+        - name: rulesetId
+          schema:
+            format: int64
+            type: integer
+          in: path
+          required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpectralDiagnosticList"
+          description: Success
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Server Error
+      operationId: validateDocument
+      description: Validate document
+components:
+  schemas:
+    SpectralRuleset:
+      title: Root Type for SpectralRulesetConfig
+      description: Data model containing the Spectral ruleset
+      required:
+        - id
+      type: object
+      properties:
+        id:
+          format: int64
+          type: integer
+        name:
+          type: string
+        config:
+          type: string
+      example: |-
+        {
+            "id": 1,
+            "name": "Company Ruleset",
+            "config": "{"id":1,"name":"Default Ruleset","config":"{\"rules\":{\"title-required\":{\"given\":\"$.info\",\"description\":\"Info title is required\",\"severity\":\"hint\",\"then\":{\"function\":\"truthy\",\"field\":\"title\"}}}}"}"
+        }
+    Error:
+      title: Root Type for Error
+      description: Error response schema
+      required:
+        - type
+        - detail
+      type: object
+      properties:
+        type:
+          description: A URI reference that identifies the problem type
+          type: string
+        title:
+          description: "A short, human-readable summary of the problem"
+          type: string
+        status:
+          format: int32
+          description: HTTP status code
+          type: integer
+        detail:
+          description: A human-readable explanation specific to this occurrence of the problem.
+          type: string
+      example:
+        type: ruleset-not-found
+        title: The ruleset was not found
+        status: 404
+        detail: The ruleset with ID '1' does not exist
+    SpectralDiagnostic:
+      title: Root Type for SpectralDiagnostic
+      description: ""
+      required:
+        - code
+        - message
+        - path
+        - severity
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        path:
+          type: array
+          items:
+            type: string
+        severity:
+          format: int32
+          type: integer
+        range:
+          type: object
+          properties:
+            start:
+              type: object
+              properties:
+                line:
+                  format: int32
+                  type: integer
+                character:
+                  format: int32
+                  type: integer
+            end:
+              type: object
+              properties:
+                line:
+                  format: int32
+                  type: integer
+                character:
+                  format: int32
+                  type: integer
+      example:
+        code: title-required
+        message: Info title is required
+        path:
+          - info
+        severity: 3
+        range:
+          start:
+            line: 2
+            character: 9
+          end:
+            line: 3
+            character: 22
+    SpectralDiagnosticList:
+      title: Root Type for ValidationProblemList
+      description: ""
+      required:
+        - items
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpectralDiagnostic"
+      example:
+        items: []
+    NewSpectralRuleset:
+      title: Root Type for CreateSpectralRulesetInput
+      description: Input object to create a new Spectral ruleset
+      required:
+        - name
+        - config
+      type: object
+      properties:
+        name:
+          type: string
+        config:
+          type: string
+      example: |-
+        {
+            "name": "Default Ruleset",
+            "ruleset": "{"config":"{\"rules\":{\"title-required\":{\"given\":\"$.info\",\"description\":\"Info title is required\",\"severity\":\"hint\",\"then\":{\"function\":\"truthy\",\"field\":\"title\"}}}}","display_name":"Default Ruleset","format":"json"}"
+        }
+    UpdateSpectralRuleset:
+      description: ""
+      type: object
+      properties:
+        name:
+          description: ""
+          type: string
+        config:
+          description: ""
+          type: string
+    Document:
+      title: Root Type for ValidationRequest
+      description: Wrapper type for a source document
+      required:
+        - document
+      type: object
+      properties:
+        document:
+          type: string
+      example:
+        document: ...
+    SpectralRulesetList:
+      description: ""
+      required:
+        - items
+      type: object
+      properties:
+        items:
+          $ref: "#/components/schemas/SpectralRuleset"
+          description: ""

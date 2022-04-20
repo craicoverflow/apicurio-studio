@@ -14,6 +14,7 @@
     "@stoplight/spectral-functions": "^1.6.1",
     "@stoplight/spectral-ruleset-bundler": "^1.2.1",
     "fastify": "^3.28.0",
+    "fastify-openapi-validator": "^4.12.0-beta.3",
     "pg": "^8.7.3"
   },
   "devDependencies": {
@@ -22,6 +23,7 @@
     "dotenv": "^16.0.0",
     "json-schema-to-ts": "^2.1.2",
     "nodemon": "^2.0.15",
+    "openapi-typescript": "^5.2.0",
     "ts-node": "^10.7.0",
     "typescript": "^4.7.0-dev.20220408"
   }

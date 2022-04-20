@@ -1,4 +1,4 @@
-import { NewRuleset, Ruleset, UpdateRuleset } from "../models";
+import { ConfigDisplayFormat, NewSpectralRuleset, SpectralRuleset, UpdateSpectralRuleset } from "../models";
 import { DatabaseProvider } from "./DatabaseProvider";
 import { Client } from "pg";
 
@@ -11,7 +11,7 @@ export class PostgreSQLDatabaseProvider implements DatabaseProvider {
     this.db = client;
   }
 
-  async ListRulesets(): Promise<Ruleset[]> {
+  async ListRulesets(): Promise<SpectralRuleset[]> {
     const query = "SELECT * FROM rulesets";
     const results = await this.db.query(query);
 
@@ -19,12 +19,13 @@ export class PostgreSQLDatabaseProvider implements DatabaseProvider {
       return [];
     }
 
-    const rulesets: Ruleset[] = results.rows.map(
-      (row: { id: number; display_name: string; config: string }) => {
+    const rulesets: SpectralRuleset[] = results.rows.map(
+      (row: { id: number; display_name: string; config: string, format: ConfigDisplayFormat }) => {
         return {
           id: row.id,
           name: row.display_name,
           config: row.config,
+          format: row.format
         };
       }
     );
@@ -32,23 +33,24 @@ export class PostgreSQLDatabaseProvider implements DatabaseProvider {
     return Promise.resolve(rulesets);
   }
 
-  async CreateRuleset(ruleset: NewRuleset) {
+  async CreateRuleset(ruleset: NewSpectralRuleset) {
     const query =
-      "INSERT INTO rulesets(display_name, config) VALUES($1, $2) returning *";
+      "INSERT INTO rulesets(display_name, config, format) VALUES($1, $2, $3) returning *";
 
-    await this.db.query(query, [ruleset.name, ruleset.config]);
+    await this.db.query(query, [ruleset.name, ruleset.config, ruleset.format]);
   }
 
-  async UpdateRuleset(id: number, ruleset: UpdateRuleset) {
+  async UpdateRuleset(id: number, ruleset: UpdateSpectralRuleset) {
     const query = `UPDATE rulesets SET
 	display_name = COALESCE($1, display_name),
-	config = COALESCE($2, config)
-WHERE id = $3`;
+	config = COALESCE($2, config),
+  format = COALESCE($3, format)
+WHERE id = $4`;
 
-    this.db.query(query, [ruleset.name, ruleset.config, id]);
+    this.db.query(query, [ruleset.name, ruleset.config, ruleset.format, id]);
   }
 
-  async GetRulesetById(id: number): Promise<Ruleset> {
+  async GetRulesetById(id: number): Promise<SpectralRuleset> {
     const query = "SELECT * FROM rulesets WHERE id = $1 LIMIT 1";
 
     const results = await this.db.query(query, [id]);
@@ -57,11 +59,12 @@ WHERE id = $3`;
     }
 
     const row = results.rows[0];
-    
-    const ruleset: Ruleset = {
+
+    const ruleset: SpectralRuleset = {
       id: row.id,
       name: row.display_name,
       config: row.config,
+      format: row.format as ConfigDisplayFormat
     };
 
     return Promise.resolve(ruleset);

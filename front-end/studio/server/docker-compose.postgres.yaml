@@ -1,0 +1,16 @@
+version: '3.9'
+
+services:
+  spectral-db:
+    image: 'postgres:12.9'
+    environment:
+      - POSTGRES_USER=${AS_SPECTRAL_DB_USER}
+      - POSTGRES_PASSWORD=${AS_SPECTRAL_DB_PASSWORD}
+      - POSTGRES_DB=${AS_SPECTRAL_DATABASE}
+    ports:
+      - 55432:5432
+    volumes:
+      - spectral-db:/var/lib/postgresql/data
+
+volumes:
+  spectral-db:
