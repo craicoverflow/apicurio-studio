@@ -13,9 +13,9 @@ const start = async () => {
 
   configureRoutes(server, spectralService);
 
-  const port = parseInt(process.env.HTTP_PORT) || 3000;
+  const port = parseInt(process.env.HTTP_PORT) || 8080;
   try {
-    await server.listen(port);
+    await server.listen(port, process.env.HTTP_HOST || '127.0.0.1');
   } catch (err) {
     server.log.error(err);
     process.exit(1)
