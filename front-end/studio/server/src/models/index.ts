@@ -25,6 +25,11 @@ export interface UpdateSpectralRuleset {
 	format: ConfigDisplayFormat;
 }
 
+export interface DocumentValidationRequest {
+	ruleset: string;
+	document: string;
+}
+
 export interface Document {
 	content: string;
 }
@@ -39,7 +44,8 @@ export type ApiResponse<T = undefined> = Error | T;
 
 export enum ErrorCode {
 	RULESET_NOT_FOUND = "RULESET_NOT_FOUND",
-	INVALID_RULESET = "INVALID_RULESET"
+	INVALID_RULESET = "INVALID_RULESET",
+	SERVER_ERROR = "SERVER_ERROR"
 }
 
 export type ErrorCodeTitle = {
@@ -48,5 +54,6 @@ export type ErrorCodeTitle = {
 
 export const ErrorTitle: ErrorCodeTitle = {
 	RULESET_NOT_FOUND: 'Ruleset not found',
-	INVALID_RULESET: "Invalid ruleset"
+	INVALID_RULESET: "Invalid ruleset",
+	SERVER_ERROR: "Internal server error"
 }

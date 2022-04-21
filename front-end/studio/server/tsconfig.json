@@ -1,9 +1,9 @@
 {
 	"compilerOptions": {
-		"module": "NodeNext",
+		"module": "nodenext",
 		"resolveJsonModule": true,
 		"esModuleInterop": true,
-		"target": "es6",
+		"target": "es2017",
 		"noImplicitAny": false,
 		"sourceMap": false,
 		"outDir": "dist",

@@ -1,60 +1,28 @@
 import { bundleAndLoadRuleset } from "@stoplight/spectral-ruleset-bundler/with-loader";
-import { NewSpectralRuleset, SpectralRuleset, UpdateSpectralRuleset } from "../models/index";
 import { ISpectralService as ISpectralService } from "./ISpectralService";
-import { fetch } from "@stoplight/spectral-runtime";
-import { DatabaseProvider } from "../providers/DatabaseProvider";
+import { fetch as spectralFetch } from "@stoplight/spectral-runtime";
 import { ISpectralDiagnostic, Ruleset, Spectral } from "@stoplight/spectral-core";
+import fetch from 'node-fetch';
+import yaml from 'js-yaml';
+import HttpStatusCode from "../models/HttpStatusCodes";
 import { RulesetNotFoundError } from "../errors/index";
 
 /**
  * Spectral Service
  */
 export class SpectralService implements ISpectralService {
-  private db: DatabaseProvider;
-  constructor(db: DatabaseProvider) {
-    this.db = db;
-  }
-
-  async ListRulesets(): Promise<SpectralRuleset[]> {
-    return this.db.ListRulesets();
-  }
-
-  async CreateRuleset(newRuleset: NewSpectralRuleset): Promise<void> {
-    this.db.CreateRuleset(newRuleset);
-  }
-
-  async UpdateRuleset(id: number, updateRuleset: UpdateSpectralRuleset): Promise<void> {
-    this.db.UpdateRuleset(id, updateRuleset);
-  }
-
-  async GetRuleset(id: number): Promise<SpectralRuleset> {
-    const ruleset = await this.db.GetRulesetById(id);
-    if (ruleset === null) {
-      throw new RulesetNotFoundError();
-    }
-    return ruleset;
-  }
-
-  async ValidateDocument(
-    id: number,
-    documentContent: string
-  ): Promise<ISpectralDiagnostic[]> {
-    const rulesetRow = await this.GetRuleset(id);
-    if (rulesetRow === null) {
-      throw new RulesetNotFoundError();
-    }
-
-    const ruleset = await loadRulesetFromString(rulesetRow.config);
+  async ValidateDocument(document: string, ruleset: string): Promise<ISpectralDiagnostic[]> {
+    const resolvedRuleset = await loadRuleset(ruleset);
 
     const spectral = new Spectral();
-    spectral.setRuleset(ruleset);
+    spectral.setRuleset(resolvedRuleset);
 
-    return spectral.run(documentContent);
+    return spectral.run(document);
   }
 }
 
 // mock a file system implementation
-const createFs = (myRuleset: string) => ({
+const createMemoryFs = (myRuleset: string): any => ({
   promises: {
     async readFile(_?: string) {
       return myRuleset;
@@ -62,11 +30,51 @@ const createFs = (myRuleset: string) => ({
   },
 });
 
-async function loadRulesetFromString(rulesetContent: string): Promise<Ruleset> {
-  const fs: any = createFs(rulesetContent);
+async function loadRuleset(rulesetRef: string): Promise<Ruleset> {
+  const rulesetData = await resolveRulesetContent(rulesetRef);
+  const memFs = createMemoryFs(rulesetData);
 
   return bundleAndLoadRuleset("/.spectral.json", {
-    fs,
-    fetch,
+    fs: memFs,
+    fetch: spectralFetch,
   });
+}
+
+function isHttpUrl(str: string) {
+  let url: URL;
+
+  try {
+    url = new URL(str);
+  } catch (_) {
+    return false;
+  }
+
+  return url.protocol === "http:" || url.protocol === "https:";
+}
+
+async function resolveRulesetContent(rulesetRef: string): Promise<string> {
+  if (!isHttpUrl(rulesetRef)) {
+    return rulesetRef;
+  }
+
+  const response = await fetch(rulesetRef);
+  console.log(response.status);
+  
+  if (response.status === HttpStatusCode.NOT_FOUND) {
+    throw new RulesetNotFoundError(`No ruleset found at location: ${rulesetRef}`);
+  } else if (response.ok) {
+    let data = await response.text();
+
+    // Get document, or throw exception on error
+    try {
+      const doc = yaml.load(data);
+      data = JSON.stringify(doc);
+    } catch (e) {
+      // do nothing, assume it to be JSON
+    }
+
+    return data;
+  } else {
+    throw new Error("Error retrieving ruleset: " + response.statusText);
+  }
 }

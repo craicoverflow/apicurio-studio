@@ -1,8 +1,11 @@
 import { FastifyInstance } from "fastify";
 import { ISpectralService } from "../services/ISpectralService";
-import { ErrorCode, SpectralRuleset, UpdateSpectralRuleset, Document, SpectralDiagnosticList, ApiResponse, ErrorTitle, NewSpectralRuleset } from "../models";
+import { DocumentValidationRequest, ErrorCode, ErrorTitle } from "../models";
+import { NodePath, ValidationProblem, ValidationProblemSeverity } from "@apicurio/data-models";
+import { ISpectralDiagnostic } from "@stoplight/spectral-core";
+import { DiagnosticSeverity } from "@stoplight/types";
+import { RulesetNotFoundError } from "../errors/index";
 import HttpStatusCode from "../models/HttpStatusCodes";
-import { InvalidRulesetError, RulesetNotFoundError } from "../errors/index";
 
 export const configureRoutes = (
   fastify: FastifyInstance,
@@ -10,121 +13,53 @@ export const configureRoutes = (
 ) => {
 
   fastify
-    .get("/", async (_, reply) => {
-      const items = await spectralService.ListRulesets();
+    .post<{ Body: DocumentValidationRequest }>("/validate", async (req, reply) => {
+      const { document, ruleset } = req.body;
 
-      reply.send({ items });
-    })
-    .post<{ Body: NewSpectralRuleset }>('/', async (req, reply) => {
-      const requestBody = req.body;
-
+      let results: ISpectralDiagnostic[];
       try {
-        spectralService.CreateRuleset(requestBody);
-        reply.code(HttpStatusCode.CREATED).send();
+        results = await spectralService.ValidateDocument(document, ruleset);
       } catch (err) {
-        if (err instanceof InvalidRulesetError) {
-          reply.code(HttpStatusCode.BAD_REQUEST).send({
-            type: ErrorCode.INVALID_RULESET,
-            title: ErrorTitle.INVALID_RULESET,
-            detail: "The Spectral ruleset is invalid",
-          });
+        if (err instanceof RulesetNotFoundError) {
+          fastify.log.info(err);
+          reply.code(HttpStatusCode.NOT_FOUND).send({
+            code: ErrorCode.RULESET_NOT_FOUND,
+            detail: err.message,
+            title: ErrorTitle.RULESET_NOT_FOUND,
+            statusCode: HttpStatusCode.NOT_FOUND
+          })
+        } else {
+          fastify.log.error(err);
+          reply.code(HttpStatusCode.INTERNAL_SERVER_ERROR).send({
+            code: ErrorCode.SERVER_ERROR,
+            title: ErrorTitle.SERVER_ERROR,
+            statusCode: HttpStatusCode.INTERNAL_SERVER_ERROR
+          })
         }
       }
-    })
-    .post<{ Params: { rulesetId: number }, Body: Document, Reply: ApiResponse<SpectralDiagnosticList> }>(
-      "/:rulesetId/validate",
-      {
-        schema: {
-          params: {
-            rulesetId: {
-              type: "integer",
-            },
-          },
-        },
-      },
-      async (req, reply) => {
-        const rulesetId = req.params.rulesetId;
-        const requestBody = req.body;
 
-        try {
-          const results = await spectralService.ValidateDocument(
-            rulesetId,
-            requestBody.content
-          );
-          reply.send({ items: results });
-        } catch (err) {
-          if (err instanceof RulesetNotFoundError) {
-            reply.code(HttpStatusCode.NOT_FOUND).send({
-              type: ErrorCode.RULESET_NOT_FOUND,
-              title: ErrorTitle.RULESET_NOT_FOUND,
-              detail: "The Spectral ruleset was not found",
-            });
-          }
+      const problems: ValidationProblem[] = results.map((d: ISpectralDiagnostic) => {
+        // TODO: Fix path segments not working yet
+        const pathSegments = d.path.splice(0, d.path.length - 1).join("/");
+        return {
+          errorCode: d.code.toString(),
+          nodePath: new NodePath("/" + pathSegments),
+          message: d.message,
+          severity: severityCodeMapConfig[d.severity],
+          property: d.path[0].toString(),
+          // eslint-disable-next-line @typescript-eslint/no-empty-function
+          accept: () => { },
         }
-      }
-    )
-    .get<{ Params: { rulesetId: number }, Reply: ApiResponse<SpectralRuleset> }>(
-      "/:rulesetId",
-      {
-        schema: {
-          params: {
-            rulesetId: {
-              type: "integer",
-            },
-          },
-        },
-      },
-      async (req, reply) => {
-        const rulesetId = req.params.rulesetId;
+      });
 
-        try {
-          const ruleset = await spectralService.GetRuleset(rulesetId);
-          reply.send(ruleset);
-        } catch (err) {
-          if (err instanceof RulesetNotFoundError) {
-            reply.code(HttpStatusCode.NOT_FOUND).send({
-              type: ErrorCode.RULESET_NOT_FOUND,
-              title: ErrorTitle.RULESET_NOT_FOUND,
-              detail: "The Spectral ruleset was not found",
-            });
-          }
-        }
-      }
-    )
-    .patch<{ Params: { rulesetId: number }, Body: UpdateSpectralRuleset }>(
-      "/:rulesetId",
-      {
-        schema: {
-          params: {
-            rulesetId: {
-              type: "integer",
-            },
-          },
-        },
-      },
-      async (req, reply) => {
-        const rulesetId = req.params.rulesetId;
-        const requestBody = req.body;
+      reply.send({ items: problems });
+    });
+};
 
-        try {
-          spectralService.UpdateRuleset(rulesetId, requestBody);
-        } catch (err) {
-          if (err instanceof InvalidRulesetError) {
-            reply.code(HttpStatusCode.BAD_REQUEST).send({
-              type: ErrorCode.INVALID_RULESET,
-              title: ErrorTitle.INVALID_RULESET,
-              detail: "The Spectral ruleset is invalid",
-            });
-          } else if (err instanceof RulesetNotFoundError) {
-            reply.code(HttpStatusCode.NOT_FOUND).send({
-              type: ErrorCode.RULESET_NOT_FOUND,
-              title: ErrorTitle.RULESET_NOT_FOUND,
-              detail: "The Spectral ruleset was not found",
-            });
-          }
-        }
-
-        reply.send();
-      }
-    );
+// map severity codes from Spectral to Apicurio severity codes
+const severityCodeMapConfig: { [key in DiagnosticSeverity]: ValidationProblemSeverity } = {
+  0: ValidationProblemSeverity.high,
+  1: ValidationProblemSeverity.medium,
+  2: ValidationProblemSeverity.low,
+  3: ValidationProblemSeverity.ignore,
 };
