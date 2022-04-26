@@ -7,34 +7,6 @@
     "outDir": "../out-tsc/app",
     "baseUrl": "./",
     "types": [],
-    "paths": {
-      "crypto": [
-        "../node_modules/crypto-browserify"
-      ],
-      "stream": [
-        "../node_modules/stream-browserify"
-      ],
-      "path": [
-        "../node_modules/path-browserify"
-      ],
-      "os": [
-        "../node_modules/os-browserify"
-      ],
-      "events": [
-        "../node_modules/events"
-      ],
-      "util": [
-        "../node_modules/util"
-      ],
-      "process": [
-        "../node_modules/process"
-      ],
-      "perf_hooks": [
-        "../node_modules/perf_hooks"
-      ],
-      "nimma/fallbacks": ["../node_modules/nimma/dist/cjs/fallbacks/"],
-      "nimma/legacy": ["../node_modules/nimma/dist/legacy/cjs/"]
-    }
   },
   "files": [
     "main.ts",

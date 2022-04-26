@@ -11,7 +11,7 @@
       "schematics": {},
       "architect": {
         "build": {
-          "builder": "@angular-builders/custom-webpack:browser",
+          "builder": "@angular-devkit/build-angular:browser",
           "options": {
             "aot": true,
             "outputPath": "dist-app",
@@ -19,9 +19,6 @@
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "src/tsconfig.app.json",
-            "customWebpackConfig": {
-              "path": "src/custom-webpack.config.js"
-            },
             "assets": [
               "src/assets",
               "src/keycloak.json",
@@ -71,7 +68,7 @@
           }
         },
         "serve": {
-          "builder": "@angular-builders/custom-webpack:dev-server",
+          "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "browserTarget": "studio:build"
           },
