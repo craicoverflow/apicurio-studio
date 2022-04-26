@@ -58,8 +58,7 @@ async function resolveRulesetContent(rulesetRef: string): Promise<string> {
   }
 
   const response = await fetch(rulesetRef);
-  console.log(response.status);
-  
+
   if (response.status === HttpStatusCode.NOT_FOUND) {
     throw new RulesetNotFoundError(`No ruleset found at location: ${rulesetRef}`);
   } else if (response.ok) {

@@ -44,6 +44,7 @@ export type ApiResponse<T = undefined> = Error | T;
 
 export enum ErrorCode {
 	RULESET_NOT_FOUND = "RULESET_NOT_FOUND",
+	INVALID_VALIDATION_BODY = "INVALID_VALIDATION_BODY",
 	INVALID_RULESET = "INVALID_RULESET",
 	SERVER_ERROR = "SERVER_ERROR"
 }
@@ -55,5 +56,6 @@ export type ErrorCodeTitle = {
 export const ErrorTitle: ErrorCodeTitle = {
 	RULESET_NOT_FOUND: 'Ruleset not found',
 	INVALID_RULESET: "Invalid ruleset",
-	SERVER_ERROR: "Internal server error"
+	SERVER_ERROR: "Internal server error",
+	INVALID_VALIDATION_BODY: "Invalid request body"
 }

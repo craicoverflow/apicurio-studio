@@ -14,6 +14,13 @@ export const configureRoutes = (
 
   fastify
     .post<{ Body: DocumentValidationRequest }>("/validate", async (req, reply) => {
+      if (req.body.document == null || req.body.ruleset === null) {
+          reply.code(HttpStatusCode.BAD_REQUEST).send({
+              code: ErrorCode.INVALID_VALIDATION_BODY,
+              title: ErrorTitle.INVALID_VALIDATION_BODY,
+              statusCode:  HttpStatusCode.BAD_REQUEST
+          });
+      }
       const { document, ruleset } = req.body;
 
       let results: ISpectralDiagnostic[];
