@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@apicurio/data-models": "^1.1.26",
+    "@fastify/cors": "^7.0.0",
     "@stoplight/spectral-functions": "^1.6.1",
     "@stoplight/spectral-ruleset-bundler": "^1.2.1",
     "@types/node-fetch": "^2.6.1",
