@@ -79,7 +79,8 @@ import {MessageTraitEditorComponent} from "./_components/editors/messagetrait-ed
 import {MessageEditorComponent} from "./_components/editors/message-editor.component";
 import {AaiServerEditorComponent} from "./_components/editors/aaiserver-editor.component";
 import { OneOfInMessageEditorComponent } from "./_components/editors/oneof-in-message-editor.component";
-
+import { ISpectralValidationService } from "../../../../services/spectral-api.service";
+import { SpectralValidationService } from "../../../../services/spectral-api.service.impl";
 
 @Component({
     selector: "api-editor",
@@ -145,13 +146,16 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
     constructor(private selectionService: SelectionService, private commandService: CommandService,
                 private documentService: DocumentService, private editorsService: EditorsService,
                 private featuresService: FeaturesService, private collaboratorService: CollaboratorService,
-                private catalog: ApiCatalogService) {
+                private catalog: ApiCatalogService, spectralValidationService: SpectralValidationService) {
         super();
+
+        const spectralValidationExtensions = createSpectralValidationExtension(spectralValidationService);
+        this.validationExtensions.push(spectralValidationExtensions);
 
         Library.addReferenceResolver(this);
         console.debug("[ApiEditorComponent] Subscribing to API Catalog changes.");
         this._catalogSubscription = this.catalog.changes().subscribe(() => {
-            console.debug("[ApiEditorComponent] Re-validating model due to API Catalog change.");
+            console.info("[ApiEditorComponent] Re-validating model due to API Catalog change.");
             // Re-validate whenever the contents of the API catalog change
             this.validateModel().then(() => {
                 // Make sure any validation widgets refresh themselves
@@ -463,6 +467,7 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
             let doc: OasDocument = this.document();
             let oldValidationErrors: ValidationProblem[] = this.validationErrors;
             this.validationErrors = await Library.validateDocument(doc, this.validationRegistry, this.validationExtensions);
+            console.log('[VALERR]', this.validationErrors);
             if (!ArrayUtils.equals(oldValidationErrors, this.validationErrors)) {
                 this.onValidationChanged.emit(this.validationErrors);
             }
@@ -731,5 +736,15 @@ export class FormSelectionVisitor extends CombinedVisitorAdapter {
     public visitResponseDefinition(node: IDefinition): void {
         this._selectedNode = node as any;
         this._selectionType = "response";
+    }
+}
+
+// create a validation extension which makes a request to the Spectral micro-service
+function createSpectralValidationExtension(validationService: ISpectralValidationService): IDocumentValidatorExtension {
+    const ruleset = 'https://raw.githubusercontent.com/Apicurio/apicurio-data-models-validation-extensions/main/js/packages/spectral-validation-extension/tests/.spectral.yaml';
+    return {
+        async validateDocument(document: Node): Promise<ValidationProblem[]> {
+            return await validationService.validate(Library.writeDocumentToJSONString(document as any), ruleset);
+        }
     }
 }
