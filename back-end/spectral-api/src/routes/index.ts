@@ -46,14 +46,12 @@ export const configureRoutes = (
       }
 
       const problems: ValidationProblem[] = results.map((d: ISpectralDiagnostic) => {
-        // TODO: Fix path segments not working yet
-        const pathSegments = d.path.splice(0, d.path.length - 1).join("/");
         return {
           errorCode: d.code.toString(),
-          nodePath: new NodePath("/" + pathSegments),
+          nodePath: new NodePath("/" + d.path.join("/")),
           message: d.message,
           severity: severityCodeMapConfig[d.severity],
-          property: d.path[0].toString(),
+          property: d.path[d.path.length-1].toString(),
           // eslint-disable-next-line @typescript-eslint/no-empty-function
           accept: () => { },
         }
