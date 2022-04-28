@@ -366,6 +366,10 @@ export class ProfileEditorComponent {
         }
     }
 
+    isSpectralUrlSet() {
+        return this.profile.spectralUrl !== '';
+    }
+
     isOpenApi20(rule: ValidationRuleMetaData): boolean {
         return rule.versions.indexOf(DocumentType.openapi2) != -1;
     }

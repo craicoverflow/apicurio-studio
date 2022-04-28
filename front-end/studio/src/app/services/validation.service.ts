@@ -185,7 +185,8 @@ export class ValidationService extends AbstractHubService {
                     description: profile.description,
                     builtIn: false,
                     severities: severities,
-                    registry: new MappedValidationSeverityRegistry(severities)
+                    registry: new MappedValidationSeverityRegistry(severities),
+                    spectralUrl: profile.spectralUrl
                 }
             });
             return this.profiles;
@@ -197,7 +198,7 @@ export class ValidationService extends AbstractHubService {
      * @param info
      */
     public createValidationProfile(info: CreateValidationProfile): Promise<ValidationProfileExt> {
-        console.info("[ValidationService] Creating a validation profile named %s", info.name);
+        console.info("[ValidationService] Creating a validation profile named %s", info.name, info.spectralUrl);
 
         let createUrl: string = this.endpoint("/validationProfiles");
         let options: any = this.options({ "Accept": "application/json", "Content-Type": "application/json" });
@@ -211,7 +212,8 @@ export class ValidationService extends AbstractHubService {
                 description: p.description,
                 builtIn: false,
                 severities: severities,
-                registry: new MappedValidationSeverityRegistry(severities)
+                registry: new MappedValidationSeverityRegistry(severities),
+                spectralUrl: p.spectralUrl
             };
             this.profiles.push(newProfile);
             return newProfile;
@@ -239,6 +241,7 @@ export class ValidationService extends AbstractHubService {
                 description: update.description,
                 builtIn: false,
                 severities: update.severities,
+                spectralUrl: update.spectralUrl,
                 registry: new MappedValidationSeverityRegistry(update.severities)
             };
             let profileIndex: number = -1;

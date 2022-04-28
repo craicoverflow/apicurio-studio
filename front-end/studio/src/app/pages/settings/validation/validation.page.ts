@@ -37,6 +37,8 @@ export class ValidationPageComponent extends AbstractPageComponent {
     builtInProfiles: ValidationProfileExt[];
     profiles: ValidationProfileExt[];
 
+    // TODO: Set the default back to false
+    // and bind the value to a query parameter
     editorOpen: boolean;
     editorModel: ValidationProfile;
 
@@ -50,6 +52,7 @@ export class ValidationPageComponent extends AbstractPageComponent {
     constructor(@Inject(IAuthenticationService) private authService: IAuthenticationService, route: ActivatedRoute,
                 titleService: Title, private validationService: ValidationService) {
         super(route, titleService);
+        this.editProfile();
     }
 
     /**
@@ -106,11 +109,13 @@ export class ValidationPageComponent extends AbstractPageComponent {
             this.editorModel.name = profile.name;
             this.editorModel.description = profile.description;
             this.editorModel.severities = this.copySeverities(profile.severities);
+            this.editorModel.spectralUrl = profile.spectralUrl;
         } else {
             this.editorModel.id = null;
             this.editorModel.name = null;
             this.editorModel.description = "";
             this.editorModel.severities = {};
+            this.editorModel.spectralUrl = null;
         }
         this.editorOpen = true;
     }
@@ -158,13 +163,15 @@ export class ValidationPageComponent extends AbstractPageComponent {
      */
     saveProfile(): void {
         let profile: ValidationProfile = this.editorModel;
+        console.log('[XXX]', profile);
 
         // Create a new profile
         if (profile.id === null) {
             let info: CreateValidationProfile = {
                 name: this.editorModel.name,
                 description: this.editorModel.description,
-                severities: this.editorModel.severities
+                severities: this.editorModel.severities,
+                spectralUrl: this.editorModel.spectralUrl
             };
             this.validationService.createValidationProfile(info).then( profile => {
                 this.profiles.push(profile);
@@ -179,7 +186,8 @@ export class ValidationPageComponent extends AbstractPageComponent {
             let update: UpdateValidationProfile = {
                 name: this.editorModel.name,
                 description: this.editorModel.description,
-                severities: this.editorModel.severities
+                severities: this.editorModel.severities,
+                spectralUrl: this.editorModel.spectralUrl
             };
             this.validationService.updateValidationProfile(this.editorModel.id, update).then( newProfile => {
                 let idx: number = -1;
