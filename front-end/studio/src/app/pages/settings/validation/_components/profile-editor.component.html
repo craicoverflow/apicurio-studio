@@ -64,19 +64,19 @@
                             (onValueChange)="filterType = $event; filterValue = null"></drop-down>
 
                     <input name="name-filter" type="text" id="name-filter" class="form-control" [(ngModel)]="filterValue"
-                        (keydown)="onNameFilterKeypress($event)" placeholder="Filter by name" *ngIf="filterType == 'name'" [disabled]="isSpectralUrlSet()">
+                        (keydown)="onNameFilterKeypress($event)" placeholder="Filter by name" *ngIf="filterType == 'name'" [disabled]="isExternalRuleset()">
                     <drop-down [id]="'severity-filter'" [value]="filterValue" [options]="severityOptions()" [classes]="'dd-filter'"
                             (onValueChange)="filterValue = $event; addFilter()" noSelectionLabel="Filter by severity"
-                            *ngIf="filterType == 'severity'" [disabled]="isSpectralUrlSet()"></drop-down>
+                            *ngIf="filterType == 'severity'" [disabled]="isExternalRuleset()"></drop-down>
                     <drop-down [id]="'rule-type-filter'" [value]="filterValue" [options]="ruleTypeOptions()" [classes]="'dd-filter'"
                             (onValueChange)="filterValue = $event; addFilter()" noSelectionLabel="Filter by rule type"
-                            *ngIf="filterType == 'ruleType'" [disabled]="isSpectralUrlSet()"></drop-down>
+                            *ngIf="filterType == 'ruleType'" [disabled]="isExternalRuleset()"></drop-down>
                     <drop-down [id]="'entity-type-filter'" [value]="filterValue" [options]="entityTypeOptions()" [classes]="'dd-filter'"
                             (onValueChange)="filterValue = $event; addFilter()" noSelectionLabel="Filter by entity type"
-                            *ngIf="filterType == 'entityType'" [disabled]="isSpectralUrlSet()"></drop-down>
+                            *ngIf="filterType == 'entityType'" [disabled]="isExternalRuleset()"></drop-down>
                     <drop-down [id]="'version-filter'" [value]="filterValue" [options]="versionOptions()" [classes]="'dd-filter'"
                             (onValueChange)="filterValue = $event; addFilter()" noSelectionLabel="Filter by version"
-                            *ngIf="filterType == 'version'" [disabled]="isSpectralUrlSet()"></drop-down>
+                            *ngIf="filterType == 'version'" [disabled]="isExternalRuleset()"></drop-down>
             </div>
             <!-- Filter Results -->
             <div class="col-sm-12 filter-results" *ngIf="hasActiveFilters()">
@@ -104,7 +104,7 @@
                         <div class="header">
                             <div class="expand column"></div>
                             <div class="check column">
-                                <button (click)="toggleAll()" *ngIf="!isSpectralUrlSet()">
+                                <button (click)="toggleAll()" *ngIf="!isExternalRuleset()">
                                     <span class="fa"
                                           [class.fa-square-o]="isNoneSelected()"
                                           [class.fa-check-square-o]="isAllSelected()"
@@ -172,7 +172,7 @@
                                 <div class="header">
                                     <div class="expand column"><span class="fa fa-angle-right"></span></div>
                                     <div class="check column">
-                                        <input type="checkbox" [disabled]="isSpectralUrlSet()" (click)="toggleRuleSelection(rule)"/>
+                                        <input type="checkbox" [disabled]="isExternalRuleset()" (click)="toggleRuleSelection(rule)"/>
                                     </div>
                                     <div class="icon column" title="{{ rule.code }}"><span class="fa"
                                                                    [class.fa-ban]="isIgnore(rule)"
@@ -206,7 +206,7 @@
                 </div>
                 <div class="form-group">
                     <label for="ruleset" class="control-label">Spectral Ruleset URL</label>
-                    <div><input type="url" name="ruleset" id="ruleset" class="form-control" [(ngModel)]="profile.spectralUrl"></div>
+                    <div><input type="url" name="ruleset" id="ruleset" class="form-control" [(ngModel)]="profile.externalRuleset"></div>
                 </div>
             </div>
         </div>

@@ -366,8 +366,8 @@ export class ProfileEditorComponent {
         }
     }
 
-    isSpectralUrlSet() {
-        return this.profile.spectralUrl !== '';
+    isExternalRuleset() {
+        return this.profile.externalRuleset !== '';
     }
 
     isOpenApi20(rule: ValidationRuleMetaData): boolean {

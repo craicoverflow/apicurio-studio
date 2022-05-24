@@ -109,13 +109,13 @@ export class ValidationPageComponent extends AbstractPageComponent {
             this.editorModel.name = profile.name;
             this.editorModel.description = profile.description;
             this.editorModel.severities = this.copySeverities(profile.severities);
-            this.editorModel.spectralUrl = profile.spectralUrl;
+            this.editorModel.externalRuleset = profile.externalRuleset;
         } else {
             this.editorModel.id = null;
             this.editorModel.name = null;
             this.editorModel.description = "";
             this.editorModel.severities = {};
-            this.editorModel.spectralUrl = null;
+            this.editorModel.externalRuleset = null;
         }
         this.editorOpen = true;
     }
@@ -163,7 +163,6 @@ export class ValidationPageComponent extends AbstractPageComponent {
      */
     saveProfile(): void {
         let profile: ValidationProfile = this.editorModel;
-        console.log('[XXX]', profile);
 
         // Create a new profile
         if (profile.id === null) {
@@ -171,7 +170,7 @@ export class ValidationPageComponent extends AbstractPageComponent {
                 name: this.editorModel.name,
                 description: this.editorModel.description,
                 severities: this.editorModel.severities,
-                spectralUrl: this.editorModel.spectralUrl
+                externalRuleset: this.editorModel.externalRuleset
             };
             this.validationService.createValidationProfile(info).then( profile => {
                 this.profiles.push(profile);
@@ -187,7 +186,7 @@ export class ValidationPageComponent extends AbstractPageComponent {
                 name: this.editorModel.name,
                 description: this.editorModel.description,
                 severities: this.editorModel.severities,
-                spectralUrl: this.editorModel.spectralUrl
+                externalRuleset: this.editorModel.externalRuleset
             };
             this.validationService.updateValidationProfile(this.editorModel.id, update).then( newProfile => {
                 let idx: number = -1;
