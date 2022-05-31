@@ -37,8 +37,6 @@ export class ValidationPageComponent extends AbstractPageComponent {
     builtInProfiles: ValidationProfileExt[];
     profiles: ValidationProfileExt[];
 
-    // TODO: Set the default back to false
-    // and bind the value to a query parameter
     editorOpen: boolean;
     editorModel: ValidationProfile;
 
@@ -52,7 +50,6 @@ export class ValidationPageComponent extends AbstractPageComponent {
     constructor(@Inject(IAuthenticationService) private authService: IAuthenticationService, route: ActivatedRoute,
                 titleService: Title, private validationService: ValidationService) {
         super(route, titleService);
-        this.editProfile();
     }
 
     /**

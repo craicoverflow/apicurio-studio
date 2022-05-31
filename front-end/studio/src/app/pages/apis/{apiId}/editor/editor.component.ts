@@ -81,6 +81,7 @@ import {AaiServerEditorComponent} from "./_components/editors/aaiserver-editor.c
 import { OneOfInMessageEditorComponent } from "./_components/editors/oneof-in-message-editor.component";
 import { ISpectralValidationService } from "../../../../services/spectral-api.service";
 import { SpectralValidationService } from "../../../../services/spectral-api.service.impl";
+import { ValidationProfileExt } from "../../../../services/validation.service";
 
 @Component({
     selector: "api-editor",
@@ -95,6 +96,7 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
     @Input() embedded: boolean;
     @Input() features: ApiEditorComponentFeatures;
     @Input() validationRegistry: IValidationSeverityRegistry;
+    @Input() validationProfile: ValidationProfileExt;
     @Input() contentFetcher: (externalReference: string) => Promise<any>;
     @Input() componentImporter: (componentType: ComponentType) => Promise<ImportedComponent[]>;
     @Input() validationExtensions: IDocumentValidatorExtension[] = [];
@@ -146,11 +148,8 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
     constructor(private selectionService: SelectionService, private commandService: CommandService,
                 private documentService: DocumentService, private editorsService: EditorsService,
                 private featuresService: FeaturesService, private collaboratorService: CollaboratorService,
-                private catalog: ApiCatalogService, spectralValidationService: SpectralValidationService) {
+                private catalog: ApiCatalogService, private spectralValidationService: SpectralValidationService) {
         super();
-
-        const spectralValidationExtensions = createSpectralValidationExtension(spectralValidationService);
-        this.validationExtensions.push(spectralValidationExtensions);
 
         Library.addReferenceResolver(this);
         console.debug("[ApiEditorComponent] Subscribing to API Catalog changes.");
@@ -234,7 +233,7 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
             }
         }
 
-        if (changes["validationRegistry"]) {
+        if (changes["validationRegistry"] || changes["validationProfile"]) {
             this.validateModel().then(() => this.documentService.emitChange());
         }
     }
@@ -463,11 +462,19 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
      * Called to validate the model.
      */
     public async validateModel(): Promise<void> {
+        
         try {
             let doc: OasDocument = this.document();
             let oldValidationErrors: ValidationProblem[] = this.validationErrors;
+
+            this.validationExtensions = [];
+            if (this.validationProfile?.externalRuleset) {
+                const spectralValidationExtensions = createSpectralValidationExtension(this.spectralValidationService, this.validationProfile);
+                
+                this.validationExtensions.push(spectralValidationExtensions);
+            }
+
             this.validationErrors = await Library.validateDocument(doc, this.validationRegistry, this.validationExtensions);
-            console.log('[VALERR]', this.validationErrors);
             if (!ArrayUtils.equals(oldValidationErrors, this.validationErrors)) {
                 this.onValidationChanged.emit(this.validationErrors);
             }
@@ -740,8 +747,8 @@ export class FormSelectionVisitor extends CombinedVisitorAdapter {
 }
 
 // create a validation extension which makes a request to the Spectral micro-service
-function createSpectralValidationExtension(validationService: ISpectralValidationService): IDocumentValidatorExtension {
-    const ruleset = 'https://raw.githubusercontent.com/Apicurio/apicurio-data-models-validation-extensions/main/js/packages/spectral-validation-extension/tests/.spectral.yaml';
+function createSpectralValidationExtension(validationService: ISpectralValidationService, validationProfile: ValidationProfileExt): IDocumentValidatorExtension {
+    const ruleset = validationProfile.externalRuleset;
     return {
         async validateDocument(document: Node): Promise<ValidationProblem[]> {
             return await validationService.validate(Library.writeDocumentToJSONString(document as any), ruleset);

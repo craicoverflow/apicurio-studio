@@ -147,6 +147,7 @@ export class ValidationService extends AbstractHubService {
         if (val !== null) {
             let validationId: number = parseInt(val);
             let profile: ValidationProfileExt = this.getProfile(validationId);
+            
             if (profile) { return profile; }
         }
         return this.getDefaultProfile();
@@ -185,7 +186,8 @@ export class ValidationService extends AbstractHubService {
                     description: profile.description,
                     builtIn: false,
                     severities: severities,
-                    registry: new MappedValidationSeverityRegistry(severities),
+                    // if there is an external ruleset attached, ignore built in rules
+                    registry: profile.externalRuleset ? new NoValidationRegistry() : new MappedValidationSeverityRegistry(severities),
                     externalRuleset: profile.externalRuleset
                 }
             });
