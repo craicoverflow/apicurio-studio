@@ -18,7 +18,11 @@
 import {Injectable} from "@angular/core";
 import {
     DefaultSeverityRegistry,
+    IDocumentValidatorExtension,
     IValidationSeverityRegistry,
+    Library,
+    Node,
+    ValidationProblem,
     ValidationProblemSeverity,
     ValidationRuleMetaData
 } from "@apicurio/data-models";
@@ -27,6 +31,7 @@ import {HttpClient} from "@angular/common/http";
 import {IAuthenticationService} from "./auth.service";
 import {ConfigService} from "./config.service";
 import {CreateValidationProfile, UpdateValidationProfile, ValidationProfile} from "../models/validation.model";
+import { ISpectralValidationService } from "./spectral-api.service";
 
 
 export class StrictSeverityRegistry implements IValidationSeverityRegistry {
@@ -44,6 +49,16 @@ export class NoValidationRegistry implements IValidationSeverityRegistry {
         return ValidationProblemSeverity.ignore;
     }
 
+}
+
+// create a validation extension which makes a request to the Spectral micro-service
+export function createSpectralValidationExtension(validationService: ISpectralValidationService, validationProfile: ValidationProfileExt): IDocumentValidatorExtension {
+    const ruleset = validationProfile.externalRuleset;
+    return {
+        async validateDocument(document: Node): Promise<ValidationProblem[]> {
+            return await validationService.validate(Library.writeDocumentToJSONString(document as any), ruleset);
+        }
+    }
 }
 
 

@@ -79,9 +79,8 @@ import {MessageTraitEditorComponent} from "./_components/editors/messagetrait-ed
 import {MessageEditorComponent} from "./_components/editors/message-editor.component";
 import {AaiServerEditorComponent} from "./_components/editors/aaiserver-editor.component";
 import { OneOfInMessageEditorComponent } from "./_components/editors/oneof-in-message-editor.component";
-import { ISpectralValidationService } from "../../../../services/spectral-api.service";
 import { SpectralValidationService } from "../../../../services/spectral-api.service.impl";
-import { ValidationProfileExt } from "../../../../services/validation.service";
+import { createSpectralValidationExtension, ValidationProfileExt } from "../../../../services/validation.service";
 
 @Component({
     selector: "api-editor",
@@ -233,7 +232,16 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
             }
         }
 
-        if (changes["validationRegistry"] || changes["validationProfile"]) {
+        if (changes["validationProfile"]) {
+            this.validationExtensions = [];
+            if (this.validationProfile?.externalRuleset) {
+                const spectralValidationExtensions = createSpectralValidationExtension(this.spectralValidationService, this.validationProfile);
+                this.validationExtensions.push(spectralValidationExtensions);
+            }
+            this.validateModel().then(() => this.documentService.emitChange());
+        }
+
+        if (changes["validationRegistry"]) {
             this.validateModel().then(() => this.documentService.emitChange());
         }
     }
@@ -466,13 +474,6 @@ export class ApiEditorComponent extends AbstractApiEditorComponent implements On
         try {
             let doc: OasDocument = this.document();
             let oldValidationErrors: ValidationProblem[] = this.validationErrors;
-
-            this.validationExtensions = [];
-            if (this.validationProfile?.externalRuleset) {
-                const spectralValidationExtensions = createSpectralValidationExtension(this.spectralValidationService, this.validationProfile);
-                
-                this.validationExtensions.push(spectralValidationExtensions);
-            }
 
             this.validationErrors = await Library.validateDocument(doc, this.validationRegistry, this.validationExtensions);
             if (!ArrayUtils.equals(oldValidationErrors, this.validationErrors)) {
@@ -743,15 +744,5 @@ export class FormSelectionVisitor extends CombinedVisitorAdapter {
     public visitResponseDefinition(node: IDefinition): void {
         this._selectedNode = node as any;
         this._selectionType = "response";
-    }
-}
-
-// create a validation extension which makes a request to the Spectral micro-service
-function createSpectralValidationExtension(validationService: ISpectralValidationService, validationProfile: ValidationProfileExt): IDocumentValidatorExtension {
-    const ruleset = validationProfile.externalRuleset;
-    return {
-        async validateDocument(document: Node): Promise<ValidationProblem[]> {
-            return await validationService.validate(Library.writeDocumentToJSONString(document as any), ruleset);
-        }
     }
 }
